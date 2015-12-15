@@ -1,0 +1,24 @@
+{
+  "name": "amazon-review-scraper",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FranzSkuffka/amazon-review-scraper.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/FranzSkuffka/amazon-review-scraper/issues"
+  },
+  "homepage": "https://github.com/FranzSkuffka/amazon-review-scraper#readme",
+  "dependencies": {
+    "bluebird": "^3.0.6",
+    "cheerio": "^0.19.0",
+    "request": "^2.67.0"
+  }
+}
