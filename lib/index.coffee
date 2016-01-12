@@ -8,11 +8,11 @@ r = Promise.promisify request
 class AmazonReviewScraper
 
     domainUrl: 'http://www.amazon.com'
-    reviewUrl: '/product-reviews/B00GDQ0RMG/'
+    productReviewsBaseUrl: '/product-reviews/'
 
     config:
-        numberOfProducts: 10
-        numberOfReviews: 10
+        maxProducts: 10
+        maxReviews: 10
 
     departments: [
         '/Best-Sellers-Electronics/zgbs/electronics/'
@@ -25,40 +25,50 @@ class AmazonReviewScraper
 
 
 
-    crawlProduct = () ->
+    crawlProduct: () ->
 
-    crawlComments = (err, res, body) ->
+    scrapeProductReviewPage: (body) =>
         $ = cheerio.load body
         reviews = $ '#cm_cr-review_list > .a-section'
             .each ->
                 console.log '__________________________________'
                 console.log $(this).text()
         linkNextPage = $ '.a-last'
-            .each ->
-                console.log '__________________________________'
-                nextPageUrl = $(this).children()[0].attribs.href
-                console.log domain + nextPageUrl
-                console.log domain + reviewUrl
-                request({uri: domain + nextPageUrl}, crawlComments) if nextPageUrl?
+            .each (i, el) =>
+                console.log 'next page __________________________________'
+                nextPageUrl = $(el).children()[0].attribs.href
+                if nextPageUrl?
+                    r({uri: @domainUrl + nextPageUrl})
+                        .then (res, body) =>
+                            @scrapeProductReviewPage(res.body)
 
-    scrapeProduct: =>
-        request {uri: @domain + reviewUrl}, crawlComments
+    scrapeReviewMetaData: (reviewId)->
 
-    getDepartmentProductUrls: =>
+    scrapeProductReviews: (productUrl, maxReviews)=>
+        amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
+
+        r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId}
+            .then (res, body) =>
+                @scrapeProductReviewPage(res.body)
+
+    getDepartmentProductUrls: (departmentUrl, maxProducts) =>
         r {uri: @domainUrl + @departments[0]}
             .then (res, body) ->
                 $ = cheerio.load res.body
 
-                linkElementQuery = $ '.zg_title a'
-                # linkElementQueryPromise = Promise.promisify linkElementQuery.each
-                # linkElementQueryPromise().then ->
-                #     console.log 'hi'
+                productUrls = []
 
-                linkElementQuery
-                    .each ->
-                        console.log '_______________'
-                        productUrl = this.attribs.href
-                        console.log productUrl.replace(/(\r\n|\n|\r)/gm,"")
+                linkQuery = $ '.zg_title a'
+                new Promise (resolve) ->
+
+                    linkQuery.each (i, elem)->
+                        productUrl = elem.attribs.href
+                        productUrls[i] = productUrl.replace(/(\r\n|\n|\r)/gm,"") if i < maxProducts
+                    resolve productUrls
+
+#    scrapeProductMetaData: ->
+
+
 
 
 module.exports = AmazonReviewScraper
