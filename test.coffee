@@ -6,4 +6,4 @@ AmazonComScraper.getDepartmentProductUrls(undefined, 10).then(
 #  (productUrls) -> console.log productUrls
 )
 
-AmazonComScraper.scrapeProductReviews('http://www.amazon.com/Fujifilm-INSTAX-Mini-Twin-Pack/dp/B00EB4ADQW/ref=zg_bs_electronics_8/188-6107668-5109001', 10)
+AmazonComScraper.scrapeProductReviews('http://www.amazon.com/Amazon-W87CUN-Fire-TV-Stick/dp/B00GDQ0RMG/ref=cm_cr_pr_product_top?ie=UTF8', 10)
