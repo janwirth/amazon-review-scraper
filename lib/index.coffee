@@ -5,6 +5,26 @@ fs      = require 'fs'
 
 r = Promise.promisify request
 
+# ToDo Features
+
+## required:
+## implement options: page sets, minimum review count; department URL
+
+## optional:
+## Create documentation with codo
+## change IP through TOR and/or chunk pages to prevent DDoS denial
+## scrape complete review comments
+## Implement constructor options for domain
+
+
+
+# ToDo Refactors:
+
+## extract page count finder / page identification
+## reorder methods by call order
+## chain promised methods
+## refactor single review extractor with selectors?? performance- readbility+ ?
+
 class AmazonReviewScraper
 
     domainUrl: 'http://www.amazon.com'
@@ -16,8 +36,12 @@ class AmazonReviewScraper
         '/Best-Sellers-Grocery-Gourmet-Food/zgbs/grocery/'
         ]
 
+
+
+
     # SYNCHRONOUS
 
+    # scrapes all reviews displayed on a single paginated set of reviews, e.g. a page
     scrapeProductReviewPage: (body, amazonProductId) =>
         $ = cheerio.load body
         reviewDataSets = []
@@ -26,6 +50,7 @@ class AmazonReviewScraper
                 reviewDataSets.push @scrapeSingleReview $, el, amazonProductId
         return reviewDataSets
 
+    # scrapes all information off a single review DOM element
     scrapeSingleReview: ($, el, amazonProductId) =>
         reviewElement = el
 
@@ -60,27 +85,30 @@ class AmazonReviewScraper
 
     # ASYNCHRONOUS
 
+    # Current: returns all review information of a given product, identified by URL
     scrapeProductReviews: (productUrl)=>
         amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
 
         # get total page count
         r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId}
             .then (res) =>
+                ## Extract this: getPagesToScrape (by set & review count per page)
+                ## request base page and get review count aswell as total pages count
+                ## Expect last page to yield minimum 1 review
+                ## select set by identifier and minimum review count
+                ## prevent unnecessary request through recycling response for first page extraction???
                 $ = cheerio.load res.body
                 pagination = $ '.a-pagination'
                 lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
                 totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
 
-                # ToDo: chunk pages to prevent DDoS denial
-                # ToDo: pass param to identify page sets to scrape
-                # ToDo: Chain these Promised functions into one clean metho
-
-                # too much: for pageNumber in [1 .. totalReviewPageCount]
                 pageRequests = []
 
+                # create request array with sane defaults
                 for pageNumber in [1 .. 2]
                     pageRequests.push r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber}
 
+                # scrape reviews off pages in responses
                 new Promise (resolve) =>
                     productReviewDatasets = []
                     Promise.all(pageRequests).then (responses) =>
@@ -88,7 +116,9 @@ class AmazonReviewScraper
                             productReviewDatasets = productReviewDatasets.concat @scrapeProductReviewPage(res.body, amazonProductId)
                         resolve productReviewDatasets
 
-    getDepartmentProductUrls: (departmentUrl, maxProducts) =>
+
+    # get product URLS of department bestsellers
+    getDepartmentProductUrls: (departmentUrl) =>
         r {uri: @domainUrl + @departments[0]}
             .then (res, body) ->
                 $ = cheerio.load res.body
