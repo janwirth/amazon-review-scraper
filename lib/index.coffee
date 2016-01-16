@@ -11,6 +11,7 @@ r = Promise.promisify request
 ## implement options: page sets, minimum review count; department URL
 
 ## optional:
+## extend options, remove hard-coded options, use underscore?
 ## Create documentation with codo
 ## change IP through TOR and/or chunk pages to prevent DDoS denial
 ## scrape complete review comments
@@ -19,9 +20,7 @@ r = Promise.promisify request
 
 
 # ToDo Refactors:
-
-## extract page count finder / page identification
-## reorder methods by call order
+## extract scrapeSingleReview
 ## chain promised methods
 ## refactor single review extractor with selectors?? performance- readbility+ ?
 
@@ -85,40 +84,69 @@ class AmazonReviewScraper
 
     # ASYNCHRONOUS
 
-    # Current: returns all review information of a given product, identified by URL
-    scrapeProductReviews: (productUrl)=>
+    getPagesToScrape: (productUrl, opts) =>
         amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
 
         # get total page count
+        if !opts?
+            opts =
+                start: 3
+                middle: 2
+                end: 3
         r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId}
             .then (res) =>
-                ## Extract this: getPagesToScrape (by set & review count per page)
-                ## request base page and get review count aswell as total pages count
-                ## Expect last page to yield minimum 1 review
-                ## select set by identifier and minimum review count
-                ## prevent unnecessary request through recycling response for first page extraction???
-                $ = cheerio.load res.body
-                pagination = $ '.a-pagination'
-                lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
-                totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
-
-                pageRequests = []
-
-                # create request array with sane defaults
-                for pageNumber in [1 .. 2]
-                    pageRequests.push r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber}
-
-                # scrape reviews off pages in responses
                 new Promise (resolve) =>
-                    productReviewDatasets = []
-                    Promise.all(pageRequests).then (responses) =>
-                        for res in responses
-                            productReviewDatasets = productReviewDatasets.concat @scrapeProductReviewPage(res.body, amazonProductId)
-                        resolve productReviewDatasets
+                    ## Extract this: getPagesToScrape (by set & review count per page)
+                    ## request base page and get review count aswell as total pages count
+                    ## Expect last page to yield minimum 1 review
+                    ## select set by identifier and minimum review count
+                    ## prevent unnecessary request through recycling response for first page extraction???
+                    $ = cheerio.load res.body
+                    pagination = $ '.a-pagination'
+                    lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
+                    totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
+                    pageNumbersToScrape = [1 .. totalReviewPageCount]
+                    if opts.start && opts.middle && opts.end <= totalReviewPageCount
+                        start = pageNumbersToScrape.slice 0, opts.start
+                        end = pageNumbersToScrape.slice pageNumbersToScrape.length - opts.end, pageNumbersToScrape.length
+                        middleStartIndex = Math.round (pageNumbersToScrape.length - opts.middle) / 2
+                        middle = pageNumbersToScrape.slice middleStartIndex, middleStartIndex + opts.middle
+                        pageNumbersToScrape = start.concat middle, end
+                        # filter duplicates
+                        pageNumbersToScrape = pageNumbersToScrape.filter (item, pos) ->
+                            pageNumbersToScrape.indexOf(item) == pos
+                    pagesToScrape = []
+                    pagesToScrape.push @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber for pageNumber in pageNumbersToScrape
+                    resolve pagesToScrape
+
+
+
+
+    # returns all review information of a given product, identified by URL
+    scrapeProductReviews: (productUrl) =>
+        @getPagesToScrape(productUrl)
+            .then (urls) => @scrapeProductReviewPages(urls, productUrl)
+            .then (data) => new Promise (resolve) => resolve data
+
+    # scrapes all review page urls
+    scrapeProductReviewPages: (urlsToScrape, productUrl) =>
+        pageRequests = []
+        amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
+        # create request array with sane defaults
+        for url in urlsToScrape
+            pageRequests.push r {uri: url}
+
+        # scrape reviews off pages in responses
+        new Promise (resolve) =>
+            productReviewDatasets = []
+            Promise.all(pageRequests).then (responses) =>
+                for res in responses
+                    productReviewDatasets = productReviewDatasets.concat @scrapeProductReviewPage(res.body, amazonProductId)
+                resolve productReviewDatasets
 
 
     # get product URLS of department bestsellers
-    getDepartmentProductUrls: (departmentUrl) =>
+    getDepartmentProductUrls: (departmentUrl, maxProducts) =>
         r {uri: @domainUrl + @departments[0]}
             .then (res, body) ->
                 $ = cheerio.load res.body
