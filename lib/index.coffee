@@ -128,6 +128,20 @@ class AmazonReviewScraper
             .then (urls) => @scrapeProductReviewPages(urls, productUrl)
             .then (data) => new Promise (resolve) => resolve data
 
+
+    scrapeProduct: (productUrl) =>
+        new Promise (resolve) =>
+            amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
+            r {uri: productUrl}
+                .then (res, body) ->
+                    $ = cheerio.load res.body
+                    price = Number $('#priceblock_ourprice').text().substr(1)
+                    productData =
+                        name: $('#productTitle').text()
+                        id: amazonProductId
+                        price: price
+                    resolve productData
+
     # scrapes all review page urls
     scrapeProductReviewPages: (urlsToScrape, productUrl) =>
         pageRequests = []
