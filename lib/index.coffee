@@ -149,10 +149,12 @@ class AmazonReviewScraper
                 .then (res, body) ->
                     $ = cheerio.load res.body
                     price = Number $('#priceblock_ourprice').text().substr(1)
+                    avgRating = Number $('#avgRating span a span').text().trim().substr(0,3)
                     productData =
                         name: $('#productTitle').text()
                         id: amazonProductId
                         price: price
+                        avgRating: avgRating
                     resolve productData
 
     # scrapes all review page urls
