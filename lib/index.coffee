@@ -53,6 +53,15 @@ class AmazonReviewScraper
         commentCount = $($(el).find('.review-comment-total')[0]).text()
         text = $($(el).find('.review-text')[0]).text()
 
+        #  count images
+        images = $($(el).find('.review-image-tile-section')[0])['0']
+        if images?
+            imageCount = 0
+            for image in images.children
+                imageCount++ if image.attribs.src? if image.attribs?
+        else
+            imageCount = 0
+
         reviewData =
             id: reviewElement.attribs.id
             productId: amazonProductId
@@ -61,6 +70,8 @@ class AmazonReviewScraper
             rating: titleArray.text().split('.')[0]
             title: title
             text: text
+            imageCount: imageCount
+
 
             votes:
                 helpful: votesArray[0]
