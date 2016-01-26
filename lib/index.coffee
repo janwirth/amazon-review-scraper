@@ -53,15 +53,37 @@ class AmazonReviewScraper
         commentCount = $($(el).find('.review-comment-total')[0]).text()
         text = $($(el).find('.review-text')[0]).text()
 
-        # check is reviewer is vine or top1000
-        if $($(el).find('span.c7yTopDownDashedStrike')).text() == 'VINE VOICE'?
-            isVine = true
-        else
-            isVine = false
-        if $($(el).find('span.c7yTopDownDashedStrike')).text() == 'TOP 1000 REVIEWER'?
-            reviewerIsTop1000 = true
-        else
-            reviewerIsTop1000 = false
+        # check is reviewer is vine, top1000 or top500
+
+#        if $($(el).find('span.c7yTopDownDashedStrike')[0]).text() == 'VINE VOICE'?
+#            isVine = true
+#            console.log('vinevoice')
+#        else
+#            isVine = false
+#            console.log('not vinevoice')
+#        if $($(el).find('span.c7yTopDownDashedStrike')[0]).text() == 'TOP 1000 REVIEWER'?
+#            reviewerIsTop1000 = true
+#            console.log('top1000')
+#        else
+#            reviewerIsTop1000 = false
+#            console.log('not top1000')
+#        if $($(el).find('span.c7yTopDownDashedStrike')[0]).text() == 'TOP 500 REVIEWER'?
+#            reviewerIsTop500 = true
+#            console.log('top500')
+#        else
+#            reviewerIsTop500 = false
+#            console.log('not top1000')
+
+
+        # check is reviewed purchase is verified
+        
+#        if $($(el).find('.review-data').children[2].children[0].children[0]).text() == 'Verified Purchase'?
+#            purchaseVerified = true
+#            console.log(true)
+#        else
+#            purchaseVerified = false
+#            console.log(false)
+#            console.log($($(el).find('.review-data').children[2].children[0].children[0]).text() )
 
         #  count images
         images = $($(el).find('.review-image-tile-section')[0])['0']
@@ -78,6 +100,8 @@ class AmazonReviewScraper
             date: dateArray[3].concat(' ', dateArray[1],' ' , dateArray[2].split(',')[0])
             vine: isVine
             top1000: reviewerIsTop1000
+            top500: reviewerIsTop500
+#            purchaseVerified: purchaseVerified
 
             rating: titleArray.text().split('.')[0]
             title: title
