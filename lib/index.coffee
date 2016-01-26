@@ -76,7 +76,7 @@ class AmazonReviewScraper
 
 
         # check is reviewed purchase is verified
-        
+
 #        if $($(el).find('.review-data').children[2].children[0].children[0]).text() == 'Verified Purchase'?
 #            purchaseVerified = true
 #            console.log(true)
@@ -98,9 +98,9 @@ class AmazonReviewScraper
             id: reviewElement.attribs.id
             productId: amazonProductId
             date: dateArray[3].concat(' ', dateArray[1],' ' , dateArray[2].split(',')[0])
-            vine: isVine
-            top1000: reviewerIsTop1000
-            top500: reviewerIsTop500
+#            vine: isVine
+#            top1000: reviewerIsTop1000
+#            top500: reviewerIsTop500
 #            purchaseVerified: purchaseVerified
 
             rating: titleArray.text().split('.')[0]
