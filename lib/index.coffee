@@ -53,6 +53,16 @@ class AmazonReviewScraper
         commentCount = $($(el).find('.review-comment-total')[0]).text()
         text = $($(el).find('.review-text')[0]).text()
 
+        # check is reviewer is vine or top1000
+        if $($(el).find('span.c7yTopDownDashedStrike')).text() == 'VINE VOICE'?
+            isVine = true
+        else
+            isVine = false
+        if $($(el).find('span.c7yTopDownDashedStrike')).text() == 'TOP 1000 REVIEWER'?
+            reviewerIsTop1000 = true
+        else
+            reviewerIsTop1000 = false
+
         #  count images
         images = $($(el).find('.review-image-tile-section')[0])['0']
         if images?
@@ -66,6 +76,8 @@ class AmazonReviewScraper
             id: reviewElement.attribs.id
             productId: amazonProductId
             date: dateArray[3].concat(' ', dateArray[1],' ' , dateArray[2].split(',')[0])
+            vine: isVine
+            top1000: reviewerIsTop1000
 
             rating: titleArray.text().split('.')[0]
             title: title
