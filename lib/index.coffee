@@ -72,7 +72,9 @@ class AmazonReviewScraper
 #            console.log('top500')
 #        else
 #            reviewerIsTop500 = false
-#            console.log('not top1000')
+#            console.log('not top500')
+
+#         top 100, 50, 10. only check for 'top * reviewer'?
 
 
         # check is reviewed purchase is verified
