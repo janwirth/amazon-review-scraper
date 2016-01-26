@@ -74,8 +74,8 @@ class AmazonReviewScraper
 
 
             votes:
-                helpful: votesArray[0]
-                total: votesArray[2]
+                helpful: parseInt votesArray[0].replace(/,/g, '')
+                total: parseInt votesArray[2].replace(/,/g, '')
             comments:
                 count: commentCount
 
