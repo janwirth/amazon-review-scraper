@@ -29,15 +29,6 @@ class AmazonReviewScraper
     domainUrl: 'http://www.amazon.com'
     productReviewsBaseUrl: '/product-reviews/'
 
-    departments: [
-        '/Best-Sellers-Electronics/zgbs/electronics/'
-        '/Best-Sellers-Automotive/zgbs/automotive/'
-        '/Best-Sellers-Grocery-Gourmet-Food/zgbs/grocery/'
-        ]
-
-
-
-
     # SYNCHRONOUS
 
     # scrapes all reviews displayed on a single paginated set of reviews, e.g. a page
@@ -88,11 +79,19 @@ class AmazonReviewScraper
         amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
 
         # get total page count
-        if !opts?
-            opts =
+        if !opts? || !opts.pageChunks?
+            pageChunks =
                 start: 3
-                middle: 2
-                end: 3
+                middle: 0
+                end: 0
+        else
+            pageChunks = opts.pageChunks
+
+        if !opts? || !opts.sortOrder?
+            sortOrder = 'helpful'
+        else
+            sortOrder = opts.sortOrder
+
         r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId}
             .then (res) =>
                 new Promise (resolve) =>
@@ -106,25 +105,28 @@ class AmazonReviewScraper
                     lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
                     totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
                     pageNumbersToScrape = [1 .. totalReviewPageCount]
-                    if opts.start && opts.middle && opts.end <= totalReviewPageCount
-                        start = pageNumbersToScrape.slice 0, opts.start
-                        end = pageNumbersToScrape.slice pageNumbersToScrape.length - opts.end, pageNumbersToScrape.length
-                        middleStartIndex = Math.round (pageNumbersToScrape.length - opts.middle) / 2
-                        middle = pageNumbersToScrape.slice middleStartIndex, middleStartIndex + opts.middle
+                    if (pageChunks.start && pageChunks.middle && pageChunks.end) <= totalReviewPageCount
+                        start = pageNumbersToScrape.slice 0, pageChunks.start
+                        end = pageNumbersToScrape.slice pageNumbersToScrape.length - pageChunks.end, pageNumbersToScrape.length
+                        middleStartIndex = Math.round (pageNumbersToScrape.length - pageChunks.middle) / 2
+                        middle = pageNumbersToScrape.slice middleStartIndex, middleStartIndex + pageChunks.middle
                         pageNumbersToScrape = start.concat middle, end
                         # filter duplicates
                         pageNumbersToScrape = pageNumbersToScrape.filter (item, pos) ->
                             pageNumbersToScrape.indexOf(item) == pos
                     pagesToScrape = []
-                    pagesToScrape.push @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber for pageNumber in pageNumbersToScrape
+                    # build url
+                    for pageNumber in pageNumbersToScrape
+                        pageUrl = @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber + '&sortBy=' + sortOrder
+                        pagesToScrape.push pageUrl
                     resolve pagesToScrape
 
 
 
 
     # returns all review information of a given product, identified by URL
-    scrapeProductReviews: (productUrl) =>
-        @getPagesToScrape(productUrl)
+    scrapeProductReviews: (productUrl, opts) =>
+        @getPagesToScrape(productUrl, opts)
             .then (urls) => @scrapeProductReviewPages(urls, productUrl)
             .then (data) => new Promise (resolve) => resolve data
 
