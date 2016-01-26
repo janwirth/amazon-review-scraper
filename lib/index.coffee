@@ -44,48 +44,47 @@ class AmazonReviewScraper
     scrapeSingleReview: ($, el, amazonProductId) =>
         reviewElement = el
 
-        titleArray = $(el.children[1])
-        title = $(titleArray[0].children[2]).text()
-
+        # required fields
+        title = $($(el).find('.review-title')[0]).text()
+        rating = parseInt $($(el).find('.review-rating ')[0]).text().substr 0,1
         dateArray = $(el.children[2].children[3]).text().split ' '
-
-        votesArray = $(el.children[0]).text().split ' '
-        commentCount = $($(el).find('.review-comment-total')[0]).text()
         text = $($(el).find('.review-text')[0]).text()
 
-        # check is reviewer is vine, top1000 or top500
+        # optional fields
+        getVotes = (el) ->
+            votes =
+                helpful: 0
+                total: 0
+            votesEl = $(el).find('.review-votes')[0]
+            if votesEl?
+                votesText = $(votesEl).text()
+                votesTextSegments = votesText.split ' of '
+                votes.helpful = parseInt votesTextSegments[0].replace(/,/g, '')
+                votes.total = parseInt votesTextSegments[1].split(' people')[0].replace(/,/g, '')
+            votes
+        votes = getVotes(el)
 
-#        if $($(el).find('span.c7yTopDownDashedStrike')[0]).text() == 'VINE VOICE'?
-#            isVine = true
-#            console.log('vinevoice')
-#        else
-#            isVine = false
-#            console.log('not vinevoice')
-#        if $($(el).find('span.c7yTopDownDashedStrike')[0]).text() == 'TOP 1000 REVIEWER'?
-#            reviewerIsTop1000 = true
-#            console.log('top1000')
-#        else
-#            reviewerIsTop1000 = false
-#            console.log('not top1000')
-#        if $($(el).find('span.c7yTopDownDashedStrike')[0]).text() == 'TOP 500 REVIEWER'?
-#            reviewerIsTop500 = true
-#            console.log('top500')
-#        else
-#            reviewerIsTop500 = false
-#            console.log('not top500')
+        getComments = (el) ->
+            commentCount = 0
+            commentsEl = $(el).find('.review-comment-total')[0]
+            if commentsEl?
+                commentCount = parseInt $(commentsEl).text()
+            commentCount
+        commentCount = getComments(el)
 
-#         top 100, 50, 10. only check for 'top * reviewer'?
+        # reviewer badges: vine, top1000 or top500
+        badges = []
 
+        for rankRange in [10, 50, 100, 500, 1000]
+            # push rank when element is found
+            badges.push 'top' + rankRange if $(el).find('.c7y-badge-top-' + rankRange + '-reviewer')[0]?
+
+        for specialbadge in ['hall-of-fame', 'vine-voice']
+            # push rank when element is found
+            badges.push specialbadge if $(el).find('.c7y-badge-' + specialbadge)[0]?
 
         # check is reviewed purchase is verified
-
-#        if $($(el).find('.review-data').children[2].children[0].children[0]).text() == 'Verified Purchase'?
-#            purchaseVerified = true
-#            console.log(true)
-#        else
-#            purchaseVerified = false
-#            console.log(false)
-#            console.log($($(el).find('.review-data').children[2].children[0].children[0]).text() )
+        verified = $($(el).find('.review-data')[0].children[2]).text() == 'Verified Purchase'
 
         #  count images
         images = $($(el).find('.review-image-tile-section')[0])['0']
@@ -99,23 +98,16 @@ class AmazonReviewScraper
         reviewData =
             id: reviewElement.attribs.id
             productId: amazonProductId
-            date: dateArray[3].concat(' ', dateArray[1],' ' , dateArray[2].split(',')[0])
-#            vine: isVine
-#            top1000: reviewerIsTop1000
-#            top500: reviewerIsTop500
-#            purchaseVerified: purchaseVerified
+            rating: rating
 
-            rating: titleArray.text().split('.')[0]
             title: title
             text: text
+
+            verified: verified
+            badges: badges
             imageCount: imageCount
-
-
-            votes:
-                helpful: parseInt votesArray[0].replace(/,/g, '')
-                total: parseInt votesArray[2].replace(/,/g, '')
-            comments:
-                count: commentCount
+            votes: votes
+            commentCount: commentCount
 
         return reviewData
 
