@@ -73,15 +73,14 @@ class AmazonReviewScraper
         commentCount = getComments(el)
 
         # reviewer badges: vine, top1000 or top500
-        badges = []
+        badges = {}
 
         for rankRange in [10, 50, 100, 500, 1000]
             # push rank when element is found
-            badges.push 'top' + rankRange if $(el).find('.c7y-badge-top-' + rankRange + '-reviewer')[0]?
+            badges['top' + rankRange] = $(el).find('.c7y-badge-top-' + rankRange + '-reviewer')[0]?
 
         for specialbadge in ['hall-of-fame', 'vine-voice']
-            # push rank when element is found
-            badges.push specialbadge if $(el).find('.c7y-badge-' + specialbadge)[0]?
+            badges[specialbadge] = $(el).find('.c7y-badge-' + specialbadge )[0]?
 
         # check is reviewed purchase is verified
         verified = $($(el).find('.review-data')[0].children[2]).text() == 'Verified Purchase'
