@@ -174,6 +174,10 @@ class AmazonReviewScraper
     scrapeProduct: (productUrl) =>
         new Promise (resolve) =>
             amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
+            departmentId = /zg_bs_(.*?)_/.exec(productUrl)
+            if departmentId?
+                departmentId = departmentId[1]
+
             r {uri: productUrl}
                 .then (res, body) ->
                     $ = cheerio.load res.body
@@ -182,6 +186,7 @@ class AmazonReviewScraper
                     productData =
                         name: $('#productTitle').text()
                         id: amazonProductId
+                        departmentId: departmentId
                         price: price
                         avgRating: avgRating
                     resolve productData
