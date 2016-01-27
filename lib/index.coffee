@@ -48,6 +48,7 @@ class AmazonReviewScraper
         title = $($(el).find('.review-title')[0]).text()
         rating = parseInt $($(el).find('.review-rating ')[0]).text().substr 0,1
         dateArray = $(el.children[2].children[3]).text().split ' '
+        date = new Date $($(el).find('.review-date')[0]).text().split('on ')[1]
         text = $($(el).find('.review-text')[0]).text()
 
         # optional fields
@@ -98,6 +99,7 @@ class AmazonReviewScraper
             id: reviewElement.attribs.id
             productId: amazonProductId
             rating: rating
+            date: date
 
             title: title
             text: text
