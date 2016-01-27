@@ -206,7 +206,7 @@ class AmazonReviewScraper
 
     # get product URLS of department bestsellers
     getDepartmentProductUrls: (departmentUrl, maxProducts) =>
-        r {uri: @domainUrl + @departments[0]}
+        r {uri: departmentUrl}
             .then (res, body) ->
                 $ = cheerio.load res.body
 
@@ -218,5 +218,22 @@ class AmazonReviewScraper
                         productUrl = elem.attribs.href
                         productUrls[i] = productUrl.replace(/(\r\n|\n|\r)/gm,"") if i < maxProducts
                     resolve productUrls
+
+    scrapeDepartmentProducts: (departmentUrl, maxProducts, opts) =>
+        @getDepartmentProductUrls(departmentUrl, maxProducts).then (urls) =>
+            departmentRequests = []
+
+            for productUrl in urls
+                productRequest = @getPagesToScrape(productUrl, opts)
+                    .then (urls) => @scrapeProductReviewPages(urls, productUrl)
+                    .then (data) => new Promise (resolve) => resolve data
+                departmentRequests.push productRequest 
+
+            Promise.all(departmentRequests).then (responses) =>
+                new Promise (resolve) =>
+                    productDatasets = []
+                    for datasetSet in responses
+                        productDatasets = productDatasets.concat datasetSet
+                    resolve productDatasets
 
 module.exports = AmazonReviewScraper
