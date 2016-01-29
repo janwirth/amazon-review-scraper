@@ -1,4 +1,4 @@
-Scraper = require './lib/index.coffee'
+Scraper = require './lib/index'
 AmazonComScraper = new Scraper()
 
 
