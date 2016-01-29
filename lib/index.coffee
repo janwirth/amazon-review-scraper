@@ -5,6 +5,9 @@ fs      = require 'fs'
 
 r = Promise.promisify request
 
+PageSelector = require './PageSelector.coffee'
+pageSelector = new PageSelector()
+
 # ToDo Features
 
 ## required:
@@ -25,9 +28,6 @@ r = Promise.promisify request
 ## refactor single review extractor with selectors?? performance- readbility+ ?
 
 class AmazonReviewScraper
-
-    domainUrl: 'http://www.amazon.com'
-    productReviewsBaseUrl: '/product-reviews/'
 
     # SYNCHRONOUS
 
@@ -115,60 +115,14 @@ class AmazonReviewScraper
 
 
 
-    # ASYNCHRONOUS
 
-    getPagesToScrape: (productUrl, opts) =>
-        amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
-
-        # get total page count
-        if !opts? || !opts.pageChunks?
-            pageChunks =
-                start: 3
-                middle: 0
-                end: 0
-        else
-            pageChunks = opts.pageChunks
-
-        if !opts? || !opts.sortOrder?
-            sortOrder = 'helpful'
-        else
-            sortOrder = opts.sortOrder
-
-        r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId}
-            .then (res) =>
-                new Promise (resolve) =>
-                    ## Extract this: getPagesToScrape (by set & review count per page)
-                    ## request base page and get review count aswell as total pages count
-                    ## Expect last page to yield minimum 1 review
-                    ## select set by identifier and minimum review count
-                    ## prevent unnecessary request through recycling response for first page extraction???
-                    $ = cheerio.load res.body
-                    pagination = $ '.a-pagination'
-                    lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
-                    totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
-                    pageNumbersToScrape = [1 .. totalReviewPageCount]
-                    if (pageChunks.start && pageChunks.middle && pageChunks.end) <= totalReviewPageCount
-                        start = pageNumbersToScrape.slice 0, pageChunks.start
-                        end = pageNumbersToScrape.slice pageNumbersToScrape.length - pageChunks.end, pageNumbersToScrape.length
-                        middleStartIndex = Math.round (pageNumbersToScrape.length - pageChunks.middle) / 2
-                        middle = pageNumbersToScrape.slice middleStartIndex, middleStartIndex + pageChunks.middle
-                        pageNumbersToScrape = start.concat middle, end
-                        # filter duplicates
-                        pageNumbersToScrape = pageNumbersToScrape.filter (item, pos) ->
-                            pageNumbersToScrape.indexOf(item) == pos
-                    pagesToScrape = []
-                    # build url
-                    for pageNumber in pageNumbersToScrape
-                        pageUrl = @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber + '&sortBy=' + sortOrder
-                        pagesToScrape.push pageUrl
-                    resolve pagesToScrape
 
 
 
 
     # returns all review information of a given product, identified by URL
     scrapeProductReviews: (productUrl, opts) =>
-        @getPagesToScrape(productUrl, opts)
+        pageSelector.getPageUrls(productUrl, opts)
             .then (urls) => @scrapeProductReviewPages(urls, productUrl)
             .then (data) => new Promise (resolve) => resolve data
 
@@ -230,7 +184,7 @@ class AmazonReviewScraper
             departmentRequests = []
 
             for productUrl in urls
-                productRequest = @getPagesToScrape(productUrl, opts)
+                productRequest = pageSelector.getPageUrls(productUrl, opts)
                     .then (urls) => @scrapeProductReviewPages(urls, productUrl)
                     .then (data) => new Promise (resolve) => resolve data
                 departmentRequests.push productRequest 
