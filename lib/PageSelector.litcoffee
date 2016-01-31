@@ -28,6 +28,14 @@
                     pageNumbersToScrape = pageNumbersToScrape.filter (item, pos) ->
                         pageNumbersToScrape.indexOf(item) == pos
 
+            random: (totalPageCount, limit) ->
+                pageNumbersToScrape = [1 .. totalPageCount]
+                pageNumbersToScrape = _.shuffle pageNumbersToScrape
+                pageNumbersToScrape.splice limit, totalPageCount
+                pageNumbersToScrape.sort (a,b) -> a - b
+
+
+
         getPageUrls: (productUrl, options) =>
             amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
 
