@@ -1,40 +1,37 @@
+Acquire external dependencies
+
     request = require 'request'
     Promise = require 'bluebird'
     fs      = require 'fs'
 
+Promisification is leveraged to simplify the usage of
+all the asynchronous operations performed.
+Bluebird allows to wait for multiple async operations to complete.
+
     r = Promise.promisify request
+
+Require in instantiate internal modules.
 
     PageSelector = require './PageSelector'
     Scraper      = require './Scraper'
     pageSelector = new PageSelector()
     scraper      = new Scraper()
 
-    # ToDo Features
+# Amazon Scraper
+This node module allows us to scrape content off Amazon in bulk.
+Currently this is only tested with amazon.com.
+Construct without parameters.
 
-    ## required:
-    ## implement options: page sets, minimum review count; department URL
+    class AmazonScraper
 
-    ## optional:
-    ## extend options, remove hard-coded options, use underscore?
-    ## Create documentation with codo
-    ## change IP through TOR and/or chunk pages to prevent DDoS denial
-    ## scrape complete review comments
-    ## Implement constructor options for domain
+Resolves product information and reviews of a given product, identified by URL.
 
-
-
-    # ToDo Refactors:
-    ## extract scrapeSingleReview
-    ## chain promised methods
-    ## refactor single review extractor with selectors?? performance- readbility+ ?
-
-    class AmazonReviewScraper
-        # returns all review information of a given product, identified by URL
         scrapeProductReviews: (productUrl, opts) =>
             pageSelector.getPageUrls(productUrl, opts)
                 .then (urls) => @scrapeProductReviewPages(urls, productUrl)
-                .then (data) => new Promise (resolve) => resolve data
 
+
+Gets only product information by given URL.
 
         scrapeProduct: (productUrl) =>
             new Promise (resolve) =>
@@ -43,20 +40,23 @@
                 context.departmentId = /zg_bs_(.*?)_/.exec(productUrl)
                 if context.departmentId?
                     context.departmentId = context.departmentId[1]
-
                 r {uri: productUrl}
                     .then (res, body) ->
                         resolve scraper.scrape res.body, 'product', context
 
-        # scrapes all review page urls
+Scrape all reviews of a review page, identified by URL.
+
         scrapeProductReviewPages: (urlsToScrape, productUrl) =>
             pageRequests = []
             amazonProductId = /\/dp\/(.*?)\//.exec(productUrl)[1]
-            # create request array with sane defaults
+
+Push all request promises into an array.
+
             for url in urlsToScrape
                 pageRequests.push r {uri: url}
 
-            # scrape reviews off pages in responses
+Wait for all Promises to resolve and scrape reviews off pages in the responses.
+
             new Promise (resolve) =>
                 productReviewDatasets = []
                 Promise.all(pageRequests).then (responses) =>
@@ -65,28 +65,33 @@
                     resolve productReviewDatasets
 
 
-        # get product URLS of department bestsellers
-        getDepartmentProductUrls: (departmentUrl, maxProducts) =>
+Get all data from a department beststellers page
+
+        scrapeDepartmentBestsellers: (departmentUrl) =>
             r {uri: departmentUrl}
                 .then (res, body) ->
                     new Promise (resolve) ->
-                        resolve scraper.scrape(res.body, 'departmentBestsellers').productUrls
+                        resolve scraper.scrape(res.body, 'departmentBestsellers')
 
-        scrapeDepartmentProducts: (departmentUrl, maxProducts, opts) =>
-            @getDepartmentProductUrls(departmentUrl, maxProducts).then (urls) =>
-                departmentRequests = []
 
-                for productUrl in urls
-                    productRequest = pageSelector.getPageUrls(productUrl, opts)
+Scrape all reviews with product off a department
+
+        scrapeDepartmentProducts: (departmentUrl, pageSelectionOpts) =>
+            @scrapeDepartmentBestsellers(departmentUrl).then (data) =>
+                productReviewRequests = []
+
+start requests for all product reviews
+
+                for productUrl in data.productUrls
+                    productRequest = pageSelector.getPageUrls(productUrl, pageSelectionOpts)
                         .then (urls) => @scrapeProductReviewPages(urls, productUrl)
-                        .then (data) => new Promise (resolve) => resolve data
-                    departmentRequests.push productRequest 
+                    productReviewRequests.push productRequest
 
-                Promise.all(departmentRequests).then (responses) =>
+                Promise.all(productReviewRequests).then (responses) =>
                     new Promise (resolve) =>
                         productDatasets = []
                         for datasetSet in responses
                             productDatasets = productDatasets.concat datasetSet
                         resolve productDatasets
 
-    module.exports = AmazonReviewScraper
+    module.exports = AmazonScraper

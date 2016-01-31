@@ -33,24 +33,18 @@
 
             defaults =
                 sortOrder: 'helpful'
-                algorithm: 'chunks'
+                selectionAlgorithm: 'chunks'
             options = _.extend defaults, options
+
 
             r {uri: @domainUrl + @productReviewsBaseUrl + amazonProductId}
                 .then (res) =>
                     new Promise (resolve) =>
-                        ## Extract this: getPagesToScrape (by set & review count per page)
-                        ## request base page and get review count aswell as total pages count
-                        ## Expect last page to yield minimum 1 review
-                        ## select set by identifier and minimum review count
-                        ## prevent unnecessary request through recycling response for first page extraction???
                         $ = cheerio.load res.body
                         pagination = $ '.a-pagination'
                         lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
                         totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
                         pageNumbersToScrape = @algorithms[options.selectionAlgorithm] totalReviewPageCount, options.selectionAlgorithmParams
-
-                        # build urls
                         pagesToScrape = []
                         for pageNumber in pageNumbersToScrape
                             pageUrl = @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber + '&sortBy=' + options.sortOrder
