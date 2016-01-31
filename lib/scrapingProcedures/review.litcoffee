@@ -3,6 +3,7 @@
 
             # required fields
             title = $($(el).find('.review-title')[0]).text()
+            author = $($(el).find('.author')[0]).text()
             rating = parseInt $($(el).find('.review-rating ')[0]).text().substr 0,1
             dateArray = $(el.children[2].children[3]).text().split ' '
             date = new Date $($(el).find('.review-date')[0]).text().split('on ')[1]
@@ -59,6 +60,7 @@
                 date: date
 
                 title: title
+                author: author
                 text: text
 
                 verified: verified
