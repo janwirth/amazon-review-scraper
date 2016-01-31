@@ -9,7 +9,12 @@ Sale prices have a different id. Capture default price.
 
         if price == 0
             price = Number $($('.a-span12.a-color-secondary.a-size-base.a-text-strike')[1]).text().substr(1)
-            salePrice = Number $('#priceblock_saleprice').text().substr(1)
+            if price != 0
+                salePrice = Number $('#priceblock_saleprice').text().substr(1)
+        if price == 0
+            price = Number $('.swatchElement.selected .a-color-price').text().split('$')[1].split('\n')[0]
+ 
+
         avgRating = Number $('#avgRating span a span').text().trim().substr(0,3)
         productData =
             name: $('#productTitle').text()
