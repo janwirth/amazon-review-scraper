@@ -8,7 +8,8 @@ Scrape product information off a single product page
 Sale prices have a different id. Capture default price.
 
         if price == 0
-            price = Number $($('.a-span12.a-color-secondary.a-size-base.a-text-strike')[1]).text().substr(1)
+            priceElements = $('.a-span12.a-color-secondary.a-size-base.a-text-strike')
+            price = Number $(priceElements[priceElements.length - 1]).text().substr(1)
             if price != 0
                 salePrice = Number $('#priceblock_saleprice').text().substr(1)
         if price == 0
