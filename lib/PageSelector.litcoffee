@@ -50,11 +50,12 @@
                     new Promise (resolve) =>
                         $ = cheerio.load res.body
                         pagination = $ '.a-pagination'
-                        lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
-                        totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
-                        pageNumbersToScrape = @algorithms[options.selectionAlgorithm] totalReviewPageCount, options.selectionAlgorithmParams
                         pagesToScrape = []
-                        for pageNumber in pageNumbersToScrape
-                            pageUrl = @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber + '&sortBy=' + options.sortOrder
-                            pagesToScrape.push pageUrl
+                        if pagination[0]?
+                            lastPageLink = pagination[0].children[pagination[0].children.length - 2].children[0]
+                            totalReviewPageCount = lastPageLink.attribs.href.split('pageNumber=')[1]
+                            pageNumbersToScrape = @algorithms[options.selectionAlgorithm] totalReviewPageCount, options.selectionAlgorithmParams
+                            for pageNumber in pageNumbersToScrape
+                                pageUrl = @domainUrl + @productReviewsBaseUrl + amazonProductId + '?pageNumber=' + pageNumber + '&sortBy=' + options.sortOrder
+                                pagesToScrape.push pageUrl
                         resolve pagesToScrape
