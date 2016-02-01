@@ -35,17 +35,21 @@ capture hidden, e.g. 'too low' prices etc
             try
                 hiddenPriceText = Number $('input[name="originPageBuyPrice.base"]')[0].attribs.value.split('|')[1].split('|')[0]
                 price = hiddenPriceText
+            try
+                hiddenPriceText = Number JSON.parse($('.a-spacing-mini.p13n-asin')[0].attribs['data-p13n-asin-metadata']).price
+                price = hiddenPriceText
             catch e
                 e
  
 Throw error if no price was detected
 
+        name =$('#productTitle').text()
         if (price == 0) && (salePrice == 0)
             throw new Error('Price of product' + name + ' could not be detected')
 
         avgRating = Number $('#avgRating span a span').text().trim().substr(0,3)
         productData =
-            name: $('#productTitle').text()
+            name: name
             id: context.amazonProductId
             departmentId: context.departmentId
             price: price
